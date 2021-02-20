@@ -1,4 +1,6 @@
-<?php namespace Rollbar;
+<?php declare(strict_types=1);
+
+namespace Rollbar;
 
 use Psr\Log\AbstractLogger;
 use Rollbar\Payload\Payload;
