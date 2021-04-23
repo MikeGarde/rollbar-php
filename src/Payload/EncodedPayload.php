@@ -2,10 +2,11 @@
 
 class EncodedPayload
 {
+    /** @var Data|array|null  */
     protected $data = null;
     protected $encoded = null;
     protected $size = 0;
-    
+
     public function __construct(array $data)
     {
         $this->data = $data;

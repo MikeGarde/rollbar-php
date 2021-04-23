@@ -5,6 +5,8 @@
  * https://github.com/segmentio/analytics-php/blob/master/lib/Segment/Consumer/Socket.php
  */
 
+use Monolog\Logger;
+use Monolog\Handler\StreamHandler;
 use Rollbar\Response;
 use Rollbar\Payload\Payload;
 use Rollbar\Payload\EncodedPayload;
@@ -57,24 +59,39 @@ class CurlSender implements SenderInterface
         return $this->endpoint;
     }
 
-    public function send(EncodedPayload $payload, $accessToken)
+    public function send(EncodedPayload $payload, $logLocation): Response
     {
-        $handle = curl_init();
+        $logger = new Logger('rollbar');
 
-        $this->setCurlOptions($handle, $payload, $accessToken);
-        $result = curl_exec($handle);
-        $statusCode = curl_getinfo($handle, CURLINFO_HTTP_CODE);
-        
-        $result = $result === false ?
-                    curl_error($handle) :
-                    json_decode($result, true);
-        
-        curl_close($handle);
+        if (method_exists('DDTrace', 'trace_id')) {
+            $logger->pushProcessor(function ($record) {
+                $record['dd'] = [
+                    'trace_id' => \DDTrace\trace_id(),
+                    'span_id'  => \dd_trace_peek_span_id(),
+                ];
 
-        $data = $payload->data();
-        $uuid = $data['data']['uuid'] ?? null;
-        
-        return new Response($statusCode, $result, $uuid);
+                return $record;
+            });
+        }
+
+        try {
+            $level  = $payload->data()->getLevel();
+            $levels = ['DEBUG', 'INFO', 'NOTICE', 'WARNING', 'ERROR', 'CRITICAL', 'ALERT', 'EMERGENCY'];
+
+            if (!in_array($level, $levels)) {
+                $level = 'INFO';
+            }
+        }
+        catch (\Exception $e) {
+            $level = 'INFO';
+        }
+
+        $logger->pushHandler(new StreamHandler($logLocation, Logger::$$level));
+
+        $level = strtolower($level);
+        $logger->$$level($payload);
+
+        return new Response(200, '', null);
     }
 
     public function sendBatch($batch, $accessToken)

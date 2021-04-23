@@ -325,10 +325,10 @@ class Config
 
     private function setAccessToken($config)
     {
-        if (isset($_ENV['ROLLBAR_ACCESS_TOKEN']) && !isset($config['access_token'])) {
-            $config['access_token'] = $_ENV['ROLLBAR_ACCESS_TOKEN'];
+        if (!isset($config['access_token'])) {
+            $config['access_token'] = (getenv('ROLLBAR_ACCESS_TOKEN')) ?: '/var/log/rollbar/rollbar.log';
         }
-        $this->utilities->validateString($config['access_token'], "config['access_token']", 32, false);
+
         $this->accessToken = $config['access_token'];
     }
 
