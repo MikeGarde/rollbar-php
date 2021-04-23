@@ -44,6 +44,10 @@
     "phpmd/phpmd" : "^2.9"
   },
 
+  "replace": {
+    "rollbar/rollbar": "<3.0"
+  },
+
   "suggest": {
     "fluent/logger": "Needed to use the 'fluent' handler for fluentd support"
   },
