@@ -63,7 +63,7 @@ class CurlSender implements SenderInterface
     {
         $logger = new Logger('rollbar');
 
-        if (method_exists('DDTrace', 'trace_id')) {
+        if (function_exists('\dd_trace_peek_span_id')) {
             $logger->pushProcessor(function ($record) {
                 $record['dd'] = [
                     'trace_id' => \DDTrace\trace_id(),
@@ -75,7 +75,7 @@ class CurlSender implements SenderInterface
         }
 
         try {
-            $level  = $payload->data()->getLevel();
+            $level  = $payload->data()['level'];
             $levels = ['DEBUG', 'INFO', 'NOTICE', 'WARNING', 'ERROR', 'CRITICAL', 'ALERT', 'EMERGENCY'];
 
             if (!in_array($level, $levels)) {
@@ -86,10 +86,8 @@ class CurlSender implements SenderInterface
             $level = 'INFO';
         }
 
-        $logger->pushHandler(new StreamHandler($logLocation, Logger::$$level));
-
-        $level = strtolower($level);
-        $logger->$$level($payload);
+        $logger->pushHandler(new StreamHandler($logLocation));
+        $logger->log($level, $payload);
 
         return new Response(200, '', null);
     }
